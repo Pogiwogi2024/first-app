@@ -13,6 +13,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
+    public string $position = ''; // Add position property
 
     /**
      * Handle an incoming registration request.
@@ -23,6 +24,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+            'position' => ['required', 'string'], // Validate position
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -52,6 +54,19 @@ new #[Layout('components.layouts.auth')] class extends Component {
             autocomplete="name"
             :placeholder="__('Full name')"
         />
+
+        <!-- Position -->
+        <flux:select
+            wire:model="position"
+            :label="__('Position')"
+            required          
+        >
+            <option value="">{{ __('Select position') }}</option>
+            <option value="janitor">{{ __('Janitor') }}</option>
+            <option value="Housemaid">{{ __('Housemaid') }}</option>
+            <option value="hardinero">{{ __('Hardinero') }}</option>
+            <option value="caretaker">{{ __('Caretaker') }}</option>
+        </flux:select>
 
         <!-- Email Address -->
         <flux:input

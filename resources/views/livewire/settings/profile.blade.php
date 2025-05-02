@@ -1,34 +1,29 @@
 <?php
 
+use Livewire\Volt\Component;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\Rule;
-use Livewire\Volt\Component;
 
 new class extends Component {
     public string $name = '';
     public string $email = '';
+    public string $position = '';
 
-    /**
-     * Mount the component.
-     */
     public function mount(): void
     {
         $this->name = Auth::user()->name;
         $this->email = Auth::user()->email;
+        $this->position = Auth::user()->position ?? ''; // Assuming there's a 'position' field in users table
     }
 
-    /**
-     * Update the profile information for the currently authenticated user.
-     */
     public function updateProfileInformation(): void
     {
         $user = Auth::user();
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
-
             'email' => [
                 'required',
                 'string',
@@ -37,6 +32,7 @@ new class extends Component {
                 'max:255',
                 Rule::unique(User::class)->ignore($user->id)
             ],
+            'position' => ['required', 'string', 'max:255'], // Add position validation
         ]);
 
         $user->fill($validated);
@@ -50,21 +46,16 @@ new class extends Component {
         $this->dispatch('profile-updated', name: $user->name);
     }
 
-    /**
-     * Send an email verification notification to the current user.
-     */
     public function resendVerificationNotification(): void
     {
         $user = Auth::user();
 
         if ($user->hasVerifiedEmail()) {
             $this->redirectIntended(default: route('dashboard', absolute: false));
-
             return;
         }
 
         $user->sendEmailVerificationNotification();
-
         Session::flash('status', 'verification-link-sent');
     }
 }; ?>
@@ -72,12 +63,25 @@ new class extends Component {
 <section class="w-full">
     @include('partials.settings-heading')
 
-    <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
+    <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name, email address and position')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
             <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
 
             <div>
                 <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
+            </div>
+
+            <div>
+                <flux:input wire:model="position" :label="__('Current Position')" required autocomplete="Select position" />
+
+            </div>
+                <!-- INSERT DROPDOWN HERE -->
+                <flux:select wire:model="position" :label="__('You want to change your position?')" required>
+                    <option value="Janitor">{{ __('Janitor') }}</option>
+                    <option value="Housemaid">{{ __('Housemaid') }}</option>
+                    <option value="Hardinero">{{ __('Hardinero') }}</option>
+                    <option value="Caretaker">{{ __('Caretaker') }}</option>
+                </flux:select>
 
                 @if (auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail &&! auth()->user()->hasVerifiedEmail())
                     <div>
@@ -104,7 +108,7 @@ new class extends Component {
                 </div>
 
                 <x-action-message class="me-3" on="profile-updated">
-                    {{ __('Saved.') }}
+                    {{ __('has been changed.') }}
                 </x-action-message>
             </div>
         </form>
